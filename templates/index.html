@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Predictor de Precio de Laptop</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 40px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .card h1 {
+      font-size: 1.6rem;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .card p.subtitle {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #333;
+      transition: border 0.2s;
+      background: #fafafa;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #4361ee;
+      background: #fff;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #4361ee;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    button[type="submit"]:hover {
+      background: #3451d1;
+    }
+
+    /* Resultado */
+    .result-box {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .result-box.success {
+      background: #e8f5e9;
+      border: 1.5px solid #a5d6a7;
+    }
+
+    .result-box.error {
+      background: #ffebee;
+      border: 1.5px solid #ef9a9a;
+    }
+
+    .result-box .label {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .result-box .price {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2e7d32;
+    }
+
+    .result-box .error-msg {
+      font-size: 0.9rem;
+      color: #c62828;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 24px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #e8eaf6;
+      color: #3949ab;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Random Forest Regressor · R² = 0.9994</span>
+    <h1>💻 Predictor de Precio</h1>
+    <p class="subtitle">Ingresa las características de la laptop para estimar su precio.</p>
+
+    <form method="POST" action="/predict">
+
+      <!-- Marca -->
+      <div class="form-group">
+        <label for="brand">Marca</label>
+        <select name="brand" id="brand" required>
+          {% for marca in marcas %}
+            <option value="{{ marca }}"
+              {% if valores and valores.get('brand') == marca %}selected{% endif %}>
+              {{ marca }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Velocidad del procesador -->
+      <div class="form-group">
+        <label for="processor_speed">Velocidad del Procesador (GHz)</label>
+        <input type="number" step="0.01" min="1.0" max="5.0"
+               name="processor_speed" id="processor_speed"
+               value="{{ valores.processor_speed if valores else '2.5' }}" required />
+        <span class="hint">Rango típico: 1.5 – 4.0 GHz</span>
+      </div>
+
+      <!-- RAM -->
+      <div class="form-group">
+        <label for="ram_size">Memoria RAM (GB)</label>
+        <select name="ram_size" id="ram_size" required>
+          {% for ram in [4, 8, 16, 32] %}
+            <option value="{{ ram }}"
+              {% if valores and valores.get('ram_size')|int == ram %}selected{% endif %}>
+              {{ ram }} GB
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Almacenamiento -->
+      <div class="form-group">
+        <label for="storage_capacity">Almacenamiento (GB)</label>
+        <select name="storage_capacity" id="storage_capacity" required>
+          {% for storage in [256, 512, 1000] %}
+            <option value="{{ storage }}"
+              {% if valores and valores.get('storage_capacity')|int == storage %}selected{% endif %}>
+              {{ storage }} GB
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Tamaño de pantalla -->
+      <div class="form-group">
+        <label for="screen_size">Tamaño de Pantalla (pulgadas)</label>
+        <input type="number" step="0.1" min="10.0" max="18.0"
+               name="screen_size" id="screen_size"
+               value="{{ valores.screen_size if valores else '15.6' }}" required />
+        <span class="hint">Rango típico: 11 – 17 pulgadas</span>
+      </div>
+
+      <!-- Peso -->
+      <div class="form-group">
+        <label for="weight">Peso (kg)</label>
+        <input type="number" step="0.01" min="1.0" max="5.5"
+               name="weight" id="weight"
+               value="{{ valores.weight if valores else '2.0' }}" required />
+        <span class="hint">Rango típico: 2.0 – 5.0 kg</span>
+      </div>
+
+      <button type="submit">Predecir Precio</button>
+    </form>
+
+    <!-- Resultado o error -->
+    {% if prediccion %}
+      <hr class="divider"/>
+      <div class="result-box success">
+        <div class="label">Precio estimado</div>
+        <div class="price">{{ prediccion }}</div>
+      </div>
+    {% elif error %}
+      <hr class="divider"/>
+      <div class="result-box error">
+        <div class="error-msg">⚠️ Error: {{ error }}</div>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
